@@ -6,6 +6,8 @@
 <title>Particle Catalog Viewer — July 2021</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-minimap@3.6.1/dist/Control.MiniMap.min.css"/>
+<script src="https://unpkg.com/leaflet-minimap@3.6.1/dist/Control.MiniMap.min.js"></script>
 <style>
 html, body { margin:0; padding:0; height:100%; }
 #map { position:absolute; top:58px; bottom:0; left:0; right:0; }
@@ -63,7 +65,7 @@ html, body { margin:0; padding:0; height:100%; }
 .stats-panel {
     display:none; position:fixed; left:0; right:0; z-index:1050;
     background:rgba(137, 155, 47,0.95); box-shadow:0 3px 8px rgba(0,0,0,0.2);
-    padding:10px 14px; font-family:Arial,sans-serif; font-size:16px;
+    padding:10px 14px; font-family:Arial,sans-serif; font-size:13px;
     color:#fff; line-height:1.6;
 }
 .stats-panel span { display:block; }
@@ -87,6 +89,12 @@ html, body { margin:0; padding:0; height:100%; }
     background:rgba(137, 155, 47,0.9) !important; color:#fff !important;
     border-color:rgba(255,255,255,0.5) !important;
 }
+.leaflet-control-minimap {
+    border:3px solid #899b2f !important; border-radius:4px;
+}
+.leaflet-control-minimap a {
+    background-color:#899b2f !important; color:#fff !important; text-decoration:none !important;
+}
 
 @media (max-width:768px) {
     .header { padding:6px 12px; height:48px; gap:8px; }
@@ -100,6 +108,8 @@ html, body { margin:0; padding:0; height:100%; }
     .cb-ticks { width:110px; font-size:8px; }
     .colorbar-inline .cb-label { font-size:9px; }
     .stats-panel { top:48px; }
+    .leaflet-control-minimap { width:0 !important; height:0 !important; overflow:hidden; }
+    .leaflet-control-minimap.minimized-bottomright { width:auto !important; height:auto !important; }
 }
 @media (max-width:480px) {
     .header { padding:4px 8px; height:44px; gap:6px; }
@@ -160,9 +170,6 @@ const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/servi
 const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {attribution:''});
 dark.addTo(map);
 
-L.control.layers({'Street': streets, 'Satellite': satellite, 'Dark': dark}, {}, {collapsed: true}).addTo(map);
-L.control.scale().addTo(map);
-
 // ---- Layer groups ----
 let trajLayer = L.layerGroup().addTo(map);
 let pointsLayer = L.layerGroup().addTo(map);
@@ -170,6 +177,26 @@ let lowLayer = L.layerGroup();
 let habitatCellsLayer = L.layerGroup().addTo(map);
 let habitatVisitsLayer = L.layerGroup().addTo(map);
 let markersLayer = L.layerGroup().addTo(map);
+
+// Layer control with base maps AND overlay toggles
+L.control.layers(
+    {'Street': streets, 'Satellite': satellite, 'Dark': dark},
+    {
+        'Trajectory': trajLayer,
+        'Day Points': pointsLayer,
+        'Low Movement Days': lowLayer,
+        'Habitat Cells': habitatCellsLayer,
+        'Habitat Visits': habitatVisitsLayer,
+        'Start/End Markers': markersLayer,
+    },
+    {collapsed: true}
+).addTo(map);
+
+L.control.scale().addTo(map);
+
+// ---- MiniMap ----
+const miniMapTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:''});
+new L.Control.MiniMap(miniMapTiles, {toggleDisplay: true, minimized: false}).addTo(map);
 
 // Draw habitat cells once
 HABITAT_CELLS.forEach(h => {
